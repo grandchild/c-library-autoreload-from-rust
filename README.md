@@ -58,8 +58,27 @@ cargo run
 ```
 
 Now you can edit [src/lib.c](src/lib.c) and re-run `cmake --build build` to see
-the changes reflected in the running Rust application.
+the changes reflected in the running Rust application:
 
+
+```sh
+# In Rust Land                            # In C Land
+
+$ cargo run | ts -s
+  ...
+00:00:03 [0] foo() -> 4
+00:00:03 [0] bar() is not defined         # Editing to change `foo()` and add `bar()`
+00:00:04 [0] foo() -> 4                   $ cmake --build build
+00:00:04 [0] bar() is not defined         [ 50%] Building C object CMakeFiles/foo.dir/src/lib.c.o
+00:00:05 [0] foo() -> 4                   [100%] Linking C shared library libfoo.so
+00:00:05 [0] bar() is not defined         [100%] Built target foo
+00:00:06 Reloading "build/libfoo.so"
+00:00:06 [1] foo() -> 5
+00:00:06 [1] bar() -> 10
+00:00:07 [1] foo() -> 5
+00:00:07 [1] bar() -> 10
+  ...
+```
 
 ## Inspect
 
