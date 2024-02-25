@@ -7,5 +7,4 @@ edition = "2021"
 
 [dependencies]
 libloading = "0"
-libc = "0"
 dlopen2 = "0"
