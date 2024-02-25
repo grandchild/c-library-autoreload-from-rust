@@ -1,4 +1,4 @@
-# Dynamic Library Dynamic Reload in Rust
+# Dynamic-Library Autoreload in Rust
 
 
 ## What is this?
