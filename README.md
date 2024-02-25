@@ -42,7 +42,7 @@ the new library functions without needing to be restarted.
 - Repeat
 
 
-## Running
+## Run
 
 Build the library:
 
