@@ -7,34 +7,32 @@ use std::time::{Duration, SystemTime};
 use libloading::{Library, Symbol};
 
 struct Lib {
-    i: u32,
     file_path: String,
     lib: Library,
 }
 
 impl Lib {
-    fn _new(file_path: &str, i: u32) -> Result<Self, libloading::Error> {
+    fn _new(file_path: &str) -> Result<Self, libloading::Error> {
         let ret = Self {
-            i,
             file_path: file_path.to_string(),
             lib: unsafe { Library::new(file_path) }?,
         };
         Ok(ret)
     }
 
-    pub fn new(file_path: &str, i: u32) -> Result<Self, String> {
-        Self::_new(file_path, i).map_err(|e| format!("{:?}", e))
+    pub fn new(file_path: &str) -> Result<Self, String> {
+        Self::_new(file_path).map_err(|e| format!("{:?}", e))
     }
 
     fn test(&self) {
         unsafe {
             let foo: Symbol<unsafe extern "C" fn() -> i32> = self.lib.get(b"foo").unwrap();
-            println!("[{}] foo() -> {:?}", self.i, foo());
+            println!("foo() -> {:?}", foo());
             let bar: Option<Symbol<unsafe extern "C" fn() -> i32>> = self.lib.get(b"bar").ok();
             if let Some(bar) = bar {
-                println!("[{}] bar() -> {:?}", self.i, bar());
+                println!("bar() -> {:?}", bar());
             } else {
-                println!("[{}] bar() is not defined", self.i);
+                println!("bar() is not defined");
             }
         }
     }
@@ -53,28 +51,29 @@ struct Api {
 }
 
 struct Lib {
-    i: u32,
     file_path: String,
     api: Container<Api>,
 }
 
 impl Lib {
-    fn new(file_path: &str, i: u32) -> Result<Self, String> {
-        let api_container: Container<Api> =
-            unsafe { Container::load(file_path) }.map_err(|e| format!("{:?}", e))?;
+    fn _new(file_path: &str) -> Result<Self, dlopen2::Error> {
+        let api_container: Container<Api> = unsafe { Container::load(file_path) }?;
         Ok(Self {
-            i,
             file_path: file_path.to_string(),
             api: api_container,
         })
     }
 
+    fn new(file_path: &str) -> Result<Self, String> {
+        Self::_new(file_path).map_err(|e| format!("{:?}", e))
+    }
+
     fn test(&self) {
-        println!("[{}] foo() -> {:?}", self.i, unsafe { self.api.foo() });
+        println!("foo() -> {:?}", unsafe { self.api.foo() });
         if let Some(bar) = self.api.bar {
-            println!("[{}] bar() -> {:?}", self.i, unsafe { bar() });
+            println!("bar() -> {:?}", unsafe { bar() });
         } else {
-            println!("[{}] bar() is not defined", self.i);
+            println!("bar() is not defined");
         }
     }
 }
@@ -91,42 +90,38 @@ struct Api<'a> {
 }
 
 struct Lib {
-    i: u32,
     file_path: String,
     lib: Library,
 }
 
 impl Lib {
-    fn _new(file_path: &str, i: u32) -> Result<Self, dlopen2::Error> {
+    fn _new(file_path: &str) -> Result<Self, dlopen2::Error> {
         let ret = Self {
-            i,
             file_path: file_path.to_string(),
             lib: Library::open(file_path)?,
         };
         Ok(ret)
     }
-    pub fn new(file_path: &str, i: u32) -> Result<Self, String> {
-        Self::_new(file_path, i).map_err(|e| format!("{:?}", e))
+    pub fn new(file_path: &str) -> Result<Self, String> {
+        Self::_new(file_path).map_err(|e| format!("{:?}", e))
     }
 
     fn test(&self) {
         let api = unsafe { Api::load(&self.lib) }.unwrap();
-        println!("[{}] foo() -> {:?}", self.i, unsafe { (api.foo)() });
+        println!("foo() -> {:?}", unsafe { (api.foo)() });
         if let Some(bar) = api.bar {
-            println!("[{}] bar() -> {:?}", self.i, unsafe { bar() });
+            println!("bar() -> {:?}", unsafe { bar() });
         } else {
-            println!("[{}] bar() is not defined", self.i);
+            println!("bar() is not defined");
         }
     }
 }
 
 // */
-
 fn main() -> Result<(), String> {
-    let mut i = 0u32;
     let mut last_mtime = SystemTime::UNIX_EPOCH;
     loop {
-        let lib = Lib::new("build/libfoo.so", i)?;
+        let lib = Lib::new("build/libfoo.so")?;
         loop {
             lib.test();
             sleep(Duration::from_secs(1));
@@ -135,7 +130,6 @@ fn main() -> Result<(), String> {
                 if let Ok(mtime) = file_metadata.modified() {
                     if last_mtime != SystemTime::UNIX_EPOCH && last_mtime != mtime {
                         println!("Reloading {:?}", lib.file_path);
-                        i += 1;
                         last_mtime = mtime;
                         break;
                     }
