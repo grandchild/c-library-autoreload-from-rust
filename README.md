@@ -80,6 +80,10 @@ $ cargo run | ts -s
   ...
 ```
 
+(If you don't know `ts`, then check out the
+[`moreutils`](https://joeyh.name/code/moreutils) package, there's some nice
+gadgets in there!)
+
 ## Inspect
 
 - [CMakeLists.txt](CMakeLists.txt) - The manifest for the C library
